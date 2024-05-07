@@ -15,9 +15,9 @@ from streaming import MDSWriter
 from torch.utils.data import DataLoader, IterableDataset
 from transformers import AutoTokenizer, PreTrainedTokenizerBase
 
-from llmfoundry.data import ConcatTokensDataset, NoConcatDataset
+from llmfoundry.data import ConcatTokensDataset
 import multiprocessing
-from typing import Iterator, Tuple, List
+from typing import Tuple, List
 import time
 import json
 import shutil
@@ -407,27 +407,27 @@ def main(args: Namespace) -> None:
 
     # e.g. all_path = "/home/project/11003280/data_Ngan/50B_for_Yuli/yuli_data/combined.jsonl" 
     all_path = args.path
-    # if os.path.isdir(all_path):
-    #     # e.g. ["./en.jsonl", "./vi.jsonl", ...]
-    #     data_files = glob(f'{all_path}/*')
-    # else:
-    #     # e.g. ["/home/project/11003280/data_Ngan/50B_for_Yuli/yuli_data/combined.jsonl"]
-    #     data_files = [all_path]
+    if os.path.isdir(all_path):
+        # e.g. ["./en.jsonl", "./vi.jsonl", ...]
+        data_files = glob(f'{all_path}/*')
+    else:
+        # e.g. ["/home/project/11003280/data_Ngan/50B_for_Yuli/yuli_data/combined.jsonl"]
+        data_files = [all_path]
 
-    # logger.info(f'source data_files are:')
-    # for data_file in data_files:
-    #     logger.info(data_file)
+    logger.info(f'source data_files are:')
+    for data_file in data_files:
+        logger.info(data_file)
 
     logger.info(f'in Main, tokenizer: {args.tokenizer}')
 
     root = os.path.dirname(all_path)
     split_dir = os.path.join(root,'split')
 
-    # logger.info(f'root is {root}')
-    # logger.info(f'split_dir is {split_dir}')
+    logger.info(f'root is {root}')
+    logger.info(f'split_dir is {split_dir}')
 
-    # for data_file in data_files:
-    #     split_jsonl(data_file, split_dir, lines_per_file=args.chunk_size)
+    for data_file in data_files:
+        split_jsonl(data_file, split_dir, lines_per_file=args.chunk_size)
 
     data_files_split = glob(f'{split_dir}/*')
 
