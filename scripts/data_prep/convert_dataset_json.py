@@ -99,6 +99,8 @@ def build_hf_dataset(
     else:
         data_files = path
 
+    print(f'data_files are {[f"{file}" for file in data_files]}')
+
     hf_dataset = hf_datasets.load_dataset('json',
                                           data_files=data_files,
                                           split=split)
@@ -163,7 +165,7 @@ def main(args: Namespace) -> None:
     """
     if args.concat_tokens is not None:
         mode = ConcatMode.CONCAT_TOKENS
-        tokenizer = AutoTokenizer.from_pretrained(args.tokenizer)
+        tokenizer = AutoTokenizer.from_pretrained(args.tokenizer, trust_remote_code=True)
         # we will enforce length, so suppress warnings about sequences too long for the model
         tokenizer.model_max_length = int(1e30)
         columns = {'tokens': 'bytes'}
@@ -181,15 +183,11 @@ def main(args: Namespace) -> None:
                                eos_text=args.eos_text,
                                no_wrap=args.no_wrap,
                                tokenizer=tokenizer)
-
-    print('here')
+    
 
     # Write samples
     print(f'Converting to MDS format...')
-    print(
-        f'Note that the progress bar is based on the dataset length before tokenization.'
-    )
-    print(f'It will finish at a value below 100% if tokenizing')
+
     with MDSWriter(columns=columns,
                    out=os.path.join(args.out_root),
                    compression=args.compression) as out:
