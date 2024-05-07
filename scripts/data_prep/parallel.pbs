@@ -1,0 +1,33 @@
+#!/bin/bash
+#PBS -l select=1:ncpus=48:mpiprocs=48:mem=100gb
+#PBS -l walltime=06:00:00
+#PBS -N mdsconversion
+#PBS -P 11003280
+#PBS -j oe
+#PBS -o /home/project/11003280/yuli/llm-foundry/log/mdsconversion.out
+
+# load modules
+module load miniforge3/23.10
+
+# set envvars
+export HF_HOME="/home/project/11003280/vault/cache_yuli"
+source /home/project/11003280/yuli/nscc_working/engr/mosaicml_workspace/hf_token
+source activate /home/project/11003280/envs/mosaic_yuli
+export log_file="/home/project/11003280/yuli/llm-foundry/log/mdsconversion.out"
+
+# Change directory to the directory containing the data preparation script
+cd /home/project/11003280/yuli/llm-foundry/scripts/data_prep
+sleep 30
+
+python convert_dataset_json_mp.py \
+    --path "/home/project/11003280/data_Ngan/50B_for_Yuli/yuli_data/combined.jsonl" \
+    --out_root "/home/project/11003280/data_Ngan/50B_for_Yuli/out5" \
+    --log_file_path "/home/project/11003280/yuli/llm-foundry/log/mdsconversion.out" \
+    --split "train" \
+    --num_processes 48 \
+    --concat_tokens 2048 \
+    --tokenizer "aisingapore/sea-lion-7b" \
+    --eos_text '<|endoftext|>' \
+    --compression "zstd"
+
+

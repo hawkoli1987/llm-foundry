@@ -20,7 +20,7 @@ python convert_dataset_json_mp.py \
     --out_root "/home/project/11003280/data_Ngan/50B_for_Yuli/out5" \
     --log_file_path "/home/project/11003280/yuli/llm-foundry/log/mdsconversion.out" \
     --split "train" \
-    --num_processes 24 \
+    --num_processes 48 \
     --concat_tokens 2048 \
     --tokenizer "aisingapore/sea-lion-7b" \
     --eos_text '<|endoftext|>' \
