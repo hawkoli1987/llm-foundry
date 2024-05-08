@@ -23,6 +23,7 @@ import json
 import shutil
 import sys
 import logging
+import math
 
 print("finish importing modules")
 
@@ -83,7 +84,7 @@ def parse_args() -> Namespace:
 
     start_time = time.time()    
     duration = time.time() - start_time
-    print(f"finish Parsing arguments in {duration} seconds")
+    print(f"finish parsing arguments in {duration:.1f} seconds")   
     return parsed
 
 
@@ -94,16 +95,16 @@ def setup_logging(log_file_path: str):
 
     # Create handlers
     c_handler = logging.StreamHandler(sys.stdout)  # Console handler
-    f_handler = logging.FileHandler(log_file_path, mode='a')  # File handler
+    # f_handler = logging.FileHandler(log_file_path, mode='a')  # File handler
 
     # Create formatters and add it to handlers
     c_format = logging.Formatter('[%(asctime)s] %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
     c_handler.setFormatter(c_format)
-    f_handler.setFormatter(c_format)
+    # f_handler.setFormatter(c_format)
 
     # Add handlers to the logger
     logger.addHandler(c_handler)
-    logger.addHandler(f_handler)
+    # logger.addHandler(f_handler)
 
     return logger
 
@@ -182,11 +183,31 @@ def process_chunk(chunk: Tuple[int, List[str], str]):
     with open(os.path.join(split_dir, f'{file_number}.jsonl'), 'w') as output_file:
         output_file.writelines(buffer)
     duration = time.time() - start_time
-    logger.info(f'completed writing to file {file_number} in {duration} seconds')
+    logger.info(f'completed writing to file {file_number} in {duration:.1f} seconds')
+
+def avg_text_length(buffer_header: list) -> float:
+    if not buffer_header:
+        # Return a small value if the input list is empty to prevent 0-division error
+        return 1e-4
+
+    text_lengths = []
+    for line in buffer_header:
+        try:
+            # Load the JSON object
+            item = json.loads(line)
+            # Print the item
+            text_lengths.append(len(item['text']))
+        except Exception as e:
+            logger.info(f'encountered error {e}')
+            logger.info(f'line is: {line}')
+    if text_lengths == []:
+        return 1e-4
+    avg_length =sum(text_lengths)/len(text_lengths)
+    return(avg_length)
 
 # input_path: /home/project/11003280/data_Ngan/50B_for_Yuli/yuli_data/combined.jsonl
 # split_dir: /home/project/11003280/data_Ngan/50B_for_Yuli/yuli_data/split
-def split_jsonl(input_path: str, split_dir: str, lines_per_file:int=4093):
+def split_jsonl(input_path: str, split_dir: str, lines_per_file:int):
     start_time = time.time()  # Start measuring time
     logger.info('begin to split source jsonl')
 
@@ -194,17 +215,34 @@ def split_jsonl(input_path: str, split_dir: str, lines_per_file:int=4093):
         os.makedirs(split_dir)
    
     file_number = 0
+    total_lines = 0
     buffer = []
+    # default text length per sample is 2000
+    std_text_length = 2e3
+    sample_size = 10
+
     with open(input_path, 'r') as source_file:
-        while True:
-            # Read a block of lines
-            buffer = [source_file.readline() for _ in range(lines_per_file)]
+       
+        while True:      
+            # Read a block of lines            
+            buffer_header = [source_file.readline() for _ in range(sample_size)]
             # Check if the end of the file has been reached
-            if not buffer[0]:
+            if (not buffer_header) or (not buffer_header[0]):
+                logger.info(f'file reading completed, total {total_lines} text lines in the dataset')
                 break
+
+            text_length_ratio = std_text_length/avg_text_length(buffer_header) # [2, 1, 0.1,..., 0.0001 ]
+            reduction_rate = max(-3*math.log(text_length_ratio), 1.0) # [1.0, 1.0, 2.7, ..., 18.0]
+            true_lines_per_file = int(lines_per_file / reduction_rate)
+            logger.info(f'split #{file_number} reduced by {reduction_rate:.1f}X >> lines/file {true_lines_per_file}')
+
+            buffer = buffer_header + [source_file.readline() for _ in range(true_lines_per_file-sample_size)]
+           
             # Remove any empty strings that signify end of file in the last read block
             buffer = list(filter(None, buffer))
-        
+            logger.info(f'it contains line #{total_lines} to #{total_lines+len(buffer)}')
+            total_lines += len(buffer)
+
             # # Write to file
             # using single processing
             with open(os.path.join(split_dir, f'{file_number}.jsonl'), 'w') as output_file:
@@ -219,7 +257,7 @@ def split_jsonl(input_path: str, split_dir: str, lines_per_file:int=4093):
 
             file_number += 1
     duration = time.time() - start_time
-    logger.info(f'source jsonl split completed in {duration} seconds')
+    logger.info(f'source jsonl split completed in {duration:.1f} seconds')
 
 ###############################
 # Ngan's MP implementation
@@ -255,7 +293,7 @@ def single_process(tuple_args: Tuple[Namespace, str]) -> None:
 
     end_time= time.time()
     duration, start_time = end_time - start_time, end_time
-    logger.info(f'Loaded HF {path_name} dataset, took {duration} seconds')
+    logger.info(f'Loaded HF {path_name} dataset, took {duration:.1f} seconds')
 
     # Write samples
     with MDSWriter(columns=columns,
@@ -267,7 +305,7 @@ def single_process(tuple_args: Tuple[Namespace, str]) -> None:
             out.write(sample)
 
     duration = time.time() - start_time
-    logger.info(f'Converted {path_name} to mds/zstd, {duration} seconds')
+    logger.info(f'Converted {path_name} to mds/zstd, {duration:.1f} seconds')
 
 # helper function to obtain global shard_id for each mds/zstd dataset
 def with_id(basename: str, shard_id: int) -> str:
@@ -383,7 +421,7 @@ def merge_shard_groups(out_dir: str) -> None:
         out.write(text)
 
     duration = time.time() - start_time
-    logger.info(f'Merged all mds/zstd in {duration} seconds')
+    logger.info(f'Merged all mds/zstd in {duration:.1f} seconds')
 
 def main(args: Namespace) -> None:
     # """Main: create C4/pile streaming dataset.
@@ -405,20 +443,23 @@ def main(args: Namespace) -> None:
 
     setup_logging(args.log_file_path)
 
-    # e.g. all_path = "/home/project/11003280/data_Ngan/50B_for_Yuli/yuli_data/combined.jsonl" 
+    logger.info("Input arguments:")
+    for attr, value in vars(args).items():
+        logger.info(f"{attr}: {value}")
+
+    # e.g. (default) all_path = "/home/project/11003280/data_Ngan/50B_for_Yuli/yuli_data/combined.jsonl" 
     all_path = args.path
-    if os.path.isdir(all_path):
+
+    if os.path.isdir(all_path): # (non-default)
         # e.g. ["./en.jsonl", "./vi.jsonl", ...]
         data_files = glob(f'{all_path}/*')
-    else:
+    else: # (default)
         # e.g. ["/home/project/11003280/data_Ngan/50B_for_Yuli/yuli_data/combined.jsonl"]
         data_files = [all_path]
 
     logger.info(f'source data_files are:')
     for data_file in data_files:
         logger.info(data_file)
-
-    logger.info(f'in Main, tokenizer: {args.tokenizer}')
 
     root = os.path.dirname(all_path)
     split_dir = os.path.join(root,'split')
@@ -442,6 +483,9 @@ def main(args: Namespace) -> None:
     # d_f = /home/project/11003280/data_Ngan/50B_for_Yuli/yuli_data/split/11.jsonl
     arg_tuples = [(args, d_f) for d_f in data_files_split]
 
+    if not os.path.exists(args.out_root):
+        os.makedirs(args.out_root)
+
     pool = multiprocessing.Pool(processes=args.num_processes)
     pool.map(single_process, arg_tuples)
     pool.close()
@@ -454,6 +498,11 @@ def main(args: Namespace) -> None:
     # ################################
     merge_shard_groups(args.out_root)
 
+    logger.info('whole conversion pipeline completed')
+
 
 if __name__ == '__main__':
     main(parse_args())
+    # args = parse_args()
+    # logger.info(args)
+    # raise ValueError("This is a custom error message")
