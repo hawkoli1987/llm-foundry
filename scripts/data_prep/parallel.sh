@@ -17,7 +17,7 @@ pwd
 
 python convert_dataset_json_mp.py \
     --path "/home/project/11003280/data_Ngan/50B_for_Yuli/yuli_data/combined.jsonl" \
-    --out_root "/home/project/11003280/data_Ngan/50B_for_Yuli/out6" \
+    --out_root "/home/project/11003280/data_Ngan/50B_for_Yuli/out7" \
     --log_file_path "/home/project/11003280/yuli/llm-foundry/log/mdsconversion.out" \
     --split "train" \
     --num_processes 48 \
@@ -25,6 +25,6 @@ python convert_dataset_json_mp.py \
     --tokenizer "aisingapore/sea-lion-7b" \
     --eos_text '<|endoftext|>' \
     --compression "zstd" \
-    --chunk_size 800000 \
+    --chunk_size 300000 \
     |& tee -a "$log_file"
     # >> "$log_file" 2>&1

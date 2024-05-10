@@ -23,7 +23,7 @@ import json
 import shutil
 import sys
 import logging
-import math
+# import math
 
 print("finish importing modules")
 
@@ -232,7 +232,9 @@ def split_jsonl(input_path: str, split_dir: str, lines_per_file:int):
                 break
 
             text_length_ratio = std_text_length/avg_text_length(buffer_header) # [2, 1, 0.1,..., 0.0001 ]
-            reduction_rate = max(-3*math.log(text_length_ratio), 1.0) # [1.0, 1.0, 2.7, ..., 18.0]
+            # reduction_rate = max(-3*math.log(text_length_ratio), 1.0) # [1.0, 1.0, 2.7, ..., 18.0]
+            # low-capped the reducation rate to 0.5 == up-capped the expansion rate to 2.0
+            reduction_rate = max((1/text_length_ratio) ** 0.8, 0.5)
             true_lines_per_file = int(lines_per_file / reduction_rate)
             logger.info(f'split #{file_number} reduced by {reduction_rate:.1f}X >> lines/file {true_lines_per_file}')
 
@@ -271,6 +273,15 @@ def single_process(tuple_args: Tuple[Namespace, str]) -> None:
     path_name = path.split('/')[-1][:-5]
     # e.g. /home/project/11003280/data_Ngan/50B_for_Yuli/yuli_data/out/11.
     outpath = os.path.join(args.out_root, path_name)
+
+    # Check if the previous conversion was successful, if not, reconvert
+    if os.path.exists(outpath):
+        if os.path.exists(os.path.join(outpath, 'index.json')):
+            logger.info(f"Skipping {path_name}. Conversion already completed.")
+            return
+        else:
+            logger.info(f"Previous conversion to {path_name} incomplete. Reconvert.")
+            shutil.rmtree(outpath)
 
     mode = ConcatMode.CONCAT_TOKENS
 
@@ -467,13 +478,13 @@ def main(args: Namespace) -> None:
     logger.info(f'root is {root}')
     logger.info(f'split_dir is {split_dir}')
 
-    for data_file in data_files:
-        split_jsonl(data_file, split_dir, lines_per_file=args.chunk_size)
+    # for data_file in data_files:
+    #     split_jsonl(data_file, split_dir, lines_per_file=args.chunk_size)
 
     data_files_split = glob(f'{split_dir}/*')
 
     # ################################
-    # 3. converting jonsl to hf dataset (not saved out)
+    # 3. converting jonsl to hf dataset (saved to HF cache dir)
     # 4. converting hf dataset to mdf dataset
     # results inside <root>/<split#>/, each containing a 'index.json' and a list of 'shard.XXXXX.mds.zstd'
     # - single processing ~ 1-2 days

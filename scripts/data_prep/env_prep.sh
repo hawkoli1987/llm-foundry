@@ -1,5 +1,5 @@
 export HF_HOME="/home/project/11003280/vault/cache_yuli"
-source /home/project/11003280/yuli/nscc_working/engr/mosaicml_workspace/hf_token
+source /home/project/11003280/yuli/nscc_working/arf/mosaicml_workspace/credential/hf_token
 module load miniforge3/23.10
 source activate /home/project/11003280/envs/mosaic_yuli
 

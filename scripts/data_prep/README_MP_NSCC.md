@@ -4,7 +4,9 @@
 - requesting a compute node, with recommend 48 CPU and 100GB RAM (roughly need 2 hours to convert 50B token dataset)
     ```bash
     # run the job in NSCC compute node "normal queue" interactively, without specifying the script upfront
-    qsub -P 11003280 -q normal -I -l select=1:ncpus=48:mem=100gb -l walltime=6:00:00
+    qsub -P 11003280 -q normal -I -l select=1:ncpus=48:mem=200gb -l walltime=12:00:00
+    qsub -P 11003280 -q normal -I -l select=1:ncpus=48:mem=200gb -l walltime=2:00:00
+    qsub -P 11003280 -q normal -I -l select=1:ncpus=2:mem=10gb -l walltime=00:05:00
 
     # it will automatically directs the current terminal from the head node to the compute node
     ```
@@ -56,7 +58,7 @@
         # a suffix labelling the 'train', 'test' and 'val' split
         --split "train" \
         # CPUs available for multi-processing
-        --num_processes 24 \
+        --num_processes 48 \
         # sequence length
         --concat_tokens 2048 \
         # Huggingface tokenizer used for tokenizing the samples from text to tokens
