@@ -223,7 +223,8 @@ def split_jsonl(input_path: str, split_dir: str, lines_per_file:int):
 
     with open(input_path, 'r') as source_file:
        
-        while True:      
+        while True:
+        # for _ in range(10):
             # Read a block of lines            
             buffer_header = [source_file.readline() for _ in range(sample_size)]
             # Check if the end of the file has been reached
@@ -274,6 +275,8 @@ def single_process(tuple_args: Tuple[Namespace, str]) -> None:
     # e.g. /home/project/11003280/data_Ngan/50B_for_Yuli/yuli_data/out/11.
     outpath = os.path.join(args.out_root, path_name)
 
+    logger.info(f"Starting processing of {path_name}")
+
     # Check if the previous conversion was successful, if not, reconvert
     if os.path.exists(outpath):
         if os.path.exists(os.path.join(outpath, 'index.json')):
@@ -283,40 +286,44 @@ def single_process(tuple_args: Tuple[Namespace, str]) -> None:
             logger.info(f"Previous conversion to {path_name} incomplete. Reconvert.")
             shutil.rmtree(outpath)
 
-    mode = ConcatMode.CONCAT_TOKENS
+    try:
+        mode = ConcatMode.CONCAT_TOKENS
 
-    # logger.info(f'@{path_name}, tokenizer: {args.tokenizer}, n_cpus: {args.num_processes}')
+        # logger.info(f'@{path_name}, tokenizer: {args.tokenizer}, n_cpus: {args.num_processes}')
 
-    tokenizer = AutoTokenizer.from_pretrained(args.tokenizer, trust_remote_code=True)
-    tokenizer.model_max_length = int(1e30)
-    columns = {'tokens': 'bytes'}
-   
-    # Get samples
-    dataset = build_hf_dataset(path=path,
-                               split=args.split,
-                               mode=mode,
-                               max_length=args.concat_tokens,
-                               bos_text=args.bos_text,
-                               eos_text=args.eos_text,
-                               no_wrap=args.no_wrap,
-                               tokenizer=tokenizer,
-                               )
+        tokenizer = AutoTokenizer.from_pretrained(args.tokenizer, trust_remote_code=True)
+        tokenizer.model_max_length = int(1e30)
+        columns = {'tokens': 'bytes'}
+    
+        # Get samples
+        dataset = build_hf_dataset(path=path,
+                                split=args.split,
+                                mode=mode,
+                                max_length=args.concat_tokens,
+                                bos_text=args.bos_text,
+                                eos_text=args.eos_text,
+                                no_wrap=args.no_wrap,
+                                tokenizer=tokenizer,
+                                )
 
-    end_time= time.time()
-    duration, start_time = end_time - start_time, end_time
-    logger.info(f'Loaded HF {path_name} dataset, took {duration:.1f} seconds')
+        end_time= time.time()
+        duration, start_time = end_time - start_time, end_time
+        logger.info(f'Loaded HF {path_name} dataset, took {duration:.1f} seconds')
 
-    # Write samples
-    with MDSWriter(columns=columns,
-                   out=outpath,
-                   compression=args.compression,
-                   ) as out:
-        # for sample in tqdm(dataset):
-        for sample in dataset:
-            out.write(sample)
+        # Write samples
+        with MDSWriter(columns=columns,
+                    out=outpath,
+                    compression=args.compression,
+                    ) as out:
+            # for sample in tqdm(dataset):
+            for sample in dataset:
+                out.write(sample)
 
-    duration = time.time() - start_time
-    logger.info(f'Converted {path_name} to mds/zstd, {duration:.1f} seconds')
+        duration = time.time() - start_time
+        logger.info(f'Converted {path_name} to mds/zstd, {duration:.1f} seconds')
+        
+    except Exception as e:
+        logger.error(f"Error processing {path_name}: {e}")    
 
 # helper function to obtain global shard_id for each mds/zstd dataset
 def with_id(basename: str, shard_id: int) -> str:
@@ -500,6 +507,7 @@ def main(args: Namespace) -> None:
     pool = multiprocessing.Pool(processes=args.num_processes)
     pool.map(single_process, arg_tuples)
     pool.close()
+    pool.join()
 
     logger.info('conversion of all jsonl to mds/zstd completed')
 

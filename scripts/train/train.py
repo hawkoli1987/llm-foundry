@@ -134,6 +134,7 @@ def main(cfg: DictConfig) -> Trainer:
                             must_exist=False,
                             default_value=[],
                             convert=True)
+    
     # Import any user provided code
     for code_path in code_paths:
         import_file(code_path)

@@ -1,11 +1,13 @@
-# export HF_HOME="/home/project/11003280/vault/cache_yuli"
-# module load miniforge3/23.10
-# source activate /home/project/11003280/envs/mosaic_yuli
+export HF_HOME="/home/project/11003280/vault/cache_yuli"
+source /home/project/11003280/yuli/nscc_working/arf/mosaicml_workspace/credential/hf_token
+module load miniforge3/23.10
+source activate /home/project/11003280/envs/py310
 
+# Change directory to the directory containing the data preparation script
+cd /home/users/nus/huangyl/scratch/code/llm-foundry/scripts/data_prep
 
-# # Change directory to the directory containing the data preparation script
-# cd /home/project/11003280/yuli/llm-foundry/scripts/data_prep
-# sleep 30
+export log_file="/home/users/nus/huangyl/scratch/code/llm-foundry/log/mdsconversion.out"
+sleep 30
 
 echo "bash commands sent"
 pwd
@@ -16,11 +18,11 @@ pwd
 # fi
 
 python convert_dataset_json_mp.py \
-    --path "/home/project/11003280/data_Ngan/50B_for_Yuli/yuli_data/combined.jsonl" \
-    --out_root "/home/project/11003280/data_Ngan/50B_for_Yuli/out7" \
-    --log_file_path "/home/project/11003280/yuli/llm-foundry/log/mdsconversion.out" \
+    --path "/home/users/nus/huangyl/scratch/data/50B_for_Yuli/yuli_data/combined.jsonl" \
+    --out_root "/home/users/nus/huangyl/scratch/data/50B_for_Yuli/out4" \
+    --log_file_path "/home/users/nus/huangyl/scratch/code/llm-foundry/log/mdsconversion.out" \
     --split "train" \
-    --num_processes 48 \
+    --num_processes 64 \
     --concat_tokens 2048 \
     --tokenizer "aisingapore/sea-lion-7b" \
     --eos_text '<|endoftext|>' \
