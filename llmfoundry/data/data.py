@@ -108,9 +108,22 @@ class ConcatTokensDataset(IterableDataset):
 
         buffer = []
         for sample in self.hf_dataset:
-            encoded = self.tokenizer(sample['text'],
+            # Yuli custom scripts to generalize the key names to all dataset
+            KEYS = ['text','raw_contents','contents','raw_content','content']
+            for content_key in KEYS:
+                if content_key in sample:
+                    content = sample[content_key]
+                    break
+            else:
+                raise KeyError(f"Sample does not contain any of the expected keys: {KEYS}")
+
+            encoded = self.tokenizer(content,
                                      truncation=False,
                                      padding=False)
+
+            # encoded = self.tokenizer(sample['text'],
+            #                          truncation=False,
+            #                          padding=False)
             iids = encoded['input_ids']
             buffer = buffer + self.bos_tokens + iids + self.eos_tokens
             while len(buffer) >= self.max_length:

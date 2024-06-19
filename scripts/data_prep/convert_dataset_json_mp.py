@@ -13,17 +13,27 @@ from typing import Dict, Iterable, Optional
 import datasets as hf_datasets
 from streaming import MDSWriter
 from torch.utils.data import DataLoader, IterableDataset
-from transformers import AutoTokenizer, PreTrainedTokenizerBase
+from transformers import AutoTokenizer, PreTrainedTokenizerBase, GemmaTokenizer
 
+# when using BPE tokenizers
 from llmfoundry.data import ConcatTokensDataset
+
+# when using sentencepiece tokenizers
+# from data_N import ConcatTokensDataset
+import sentencepiece as spm
+from sentencepiece import SentencePieceProcessor
+
 import multiprocessing
-from typing import Tuple, List
+from typing import Tuple, List, Union
 import time
 import json
 import shutil
 import sys
 import logging
 # import math
+
+KEYS = ['text','raw_contents','contents','raw_content','content']
+
 
 print("finish importing modules")
 
@@ -60,7 +70,7 @@ def parse_args() -> Namespace:
     parser.add_argument('--no_wrap', default=False, action='store_true')
     parser.add_argument('--num_processes', type=int, default=multiprocessing.cpu_count())
     parser.add_argument('--chunk_size', type=int, default=int(1e6))  # Number of lines per split jsonl file
-
+    parser.add_argument('--use_lang_id', default=False, action='store_true')
     parsed = parser.parse_args()
 
     if os.path.isdir(parsed.out_root) and len(
@@ -108,6 +118,23 @@ def setup_logging(log_file_path: str):
 
     return logger
 
+
+# create temp jsonl to ensure only
+def preprocess_jsonl(path: str) -> str:
+    temp_path = f"{path}.preprocessed"
+    with open(path, 'r') as infile, open(temp_path, 'w') as outfile:
+        for line in infile:
+            obj = json.loads(line)
+            for content_key in KEYS:
+                if content_key in obj:
+                    # Ensure only 'content' field is used
+                    new_obj = {content_key: obj[content_key]}
+                    outfile.write(json.dumps(new_obj) + '\n')
+                    break
+            else:
+                logger.warning(f"Skipping object without any of the keys: {obj}")
+    return temp_path
+
 def build_hf_dataset(
     path: str,
     split: str,
@@ -116,7 +143,8 @@ def build_hf_dataset(
     bos_text: str = '',
     eos_text: str = '',
     no_wrap: bool = False,
-    tokenizer: PreTrainedTokenizerBase = None,
+    tokenizer: Union[SentencePieceProcessor, PreTrainedTokenizerBase] = None,
+    use_lang_id=False
 ) -> IterableDataset:
     """Build an IterableDataset over the HF C4 or pile source data.
 
@@ -135,9 +163,10 @@ def build_hf_dataset(
     Returns:
         An IterableDataset.
     """
+    preprocessed_path = preprocess_jsonl(path)
 
     hf_dataset = hf_datasets.load_dataset('json',
-                                        data_files=path,
+                                        data_files=preprocessed_path,
                                         split=split)
 
     dataset = ConcatTokensDataset(
@@ -147,6 +176,7 @@ def build_hf_dataset(
         bos_text=bos_text,
         eos_text=eos_text,
         no_wrap=no_wrap,
+        # use_lang_id=use_lang_id # only when using SentencePiece (128k) tokenizer
     )
 
     return dataset
@@ -191,12 +221,19 @@ def avg_text_length(buffer_header: list) -> float:
         return 1e-4
 
     text_lengths = []
-    for line in buffer_header:
+    for line in buffer_header:       
         try:
             # Load the JSON object
             item = json.loads(line)
+            for content_key in KEYS:
+                if content_key in item:
+                    content = item[content_key]
+                    break
+            else:
+                raise KeyError(f"Sample does not contain any of the expected keys: {KEYS}")
+
             # Print the item
-            text_lengths.append(len(item['text']))
+            text_lengths.append(len(content))
         except Exception as e:
             logger.info(f'encountered error {e}')
             logger.info(f'line is: {line}')
@@ -291,8 +328,21 @@ def single_process(tuple_args: Tuple[Namespace, str]) -> None:
 
         # logger.info(f'@{path_name}, tokenizer: {args.tokenizer}, n_cpus: {args.num_processes}')
 
-        tokenizer = AutoTokenizer.from_pretrained(args.tokenizer, trust_remote_code=True)
+        ## when using huggingface tokenizers
+        # tokenizer = AutoTokenizer.from_pretrained(args.tokenizer, trust_remote_code=True)
+
+        ## when using sentencepiece tokenizers
+        # tokenizer = spm.SentencePieceProcessor(model_file=args.tokenizer)
+
+        ## when using BPE dropout for Ngan
+        tokenizer = AutoTokenizer.from_pretrained(
+                args.tokenizer,
+                use_fast=False,
+                sp_model_kwargs={'enable_sampling': True, 'nbest_size': -1, 'alpha': 0.1}
+                )
+        
         tokenizer.model_max_length = int(1e30)
+
         columns = {'tokens': 'bytes'}
     
         # Get samples
@@ -304,6 +354,7 @@ def single_process(tuple_args: Tuple[Namespace, str]) -> None:
                                 eos_text=args.eos_text,
                                 no_wrap=args.no_wrap,
                                 tokenizer=tokenizer,
+                                use_lang_id=args.use_lang_id
                                 )
 
         end_time= time.time()
@@ -481,7 +532,6 @@ def main(args: Namespace) -> None:
 
     root = os.path.dirname(all_path)
     split_dir = os.path.join(root,'split')
-
     logger.info(f'root is {root}')
     logger.info(f'split_dir is {split_dir}')
 

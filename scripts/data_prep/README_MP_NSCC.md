@@ -5,8 +5,8 @@
     ```bash
     # run the job in NSCC compute node "normal queue" interactively, without specifying the script upfront
     qsub -P 11003280 -q normal -I -l select=1:ncpus=48:mem=200gb -l walltime=12:00:00
-    qsub -P 11003280 -q normal -I -l select=1:ncpus=64:mem=200gb -l walltime=4:00:00
-    qsub -P 11003280 -q normal -I -l select=1:ncpus=8:mem=100gb -l walltime=00:30:00
+    qsub -P 11003280 -q normal -I -l select=1:ncpus=50:mem=200gb -l walltime=4:00:00
+    qsub -P 11003280 -q normal -I -l select=1:ncpus=4:mem=100gb -l walltime=10:00:00
 
     # it will automatically directs the current terminal from the head node to the compute node
     ```
