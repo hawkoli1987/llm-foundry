@@ -1,10 +1,10 @@
 #!/bin/bash
-#PBS -l select=1:ncpus=17:mpiprocs=17:mem=100gb
+#PBS -l select=1:ncpus=10:mpiprocs=10:mem=100gb
 #PBS -l walltime=06:00:00
 #PBS -N mdsconversion
 #PBS -P 11003280
 #PBS -j oe
-#PBS -o /home/users/nus/huangyl/scratch/code/llm-foundry/log/mdsconversion13.out
+#PBS -o /home/users/nus/huangyl/scratch/code/llm-foundry/log/mdsconversion37.out
 
 # load modules
 module load miniforge3/23.10
@@ -18,17 +18,132 @@ source activate /home/project/11003280/envs/llmfoundry_yuli
 cd /home/users/nus/huangyl/scratch/code/llm-foundry/scripts/data_prep
 sleep 30
 
+##########################################
+# llama2
+tokenizer="/home/users/nus/huangyl/scratch/model/llama2-7b-tokenizer"
+
+# python convert_dataset_json_mp.py \
+#     --path "/home/project/11003280/vault/ngan/2024/nscc_working/arf/document_relevance_search/data/rpv2/contents_id_format_100files" \
+#     --out_root "/home/users/nus/huangyl/scratch/data/3lang/out_llama2/en_pile/" \
+#     --log_file_path "/home/users/nus/huangyl/scratch/code/llm-foundry/log/mdsconversion33.out" \
+#     --num_processes 64 \
+#     --concat_tokens 8192 \
+#     --tokenizer $tokenizer \
+#     --eos_text "<|end_of_text|>" \
+#     --compression "zstd" \
+#     --chunk_size 300000 \
+#     |& tee -a "$log_file"
+
+# python convert_dataset_json_mp.py \
+#     --path "/home/users/nus/huangyl/scratch/data/3lang/raw/en_hq/combined.jsonl" \
+#     --out_root "/home/users/nus/huangyl/scratch/data/3lang/out_llama2/en_hq/" \
+#     --log_file_path "/home/users/nus/huangyl/scratch/code/llm-foundry/log/mdsconversion35.out" \
+#     --num_processes 10 \
+#     --concat_tokens 8192 \
+#     --tokenizer $tokenizer \
+#     --chunk_size 600000 \
+#     --eos_text "<|end_of_text|>" \
+#     --compression "zstd" \
+#     |& tee -a "$log_file"
+
+# python convert_dataset_json_mp.py \
+#     --path "/home/users/nus/huangyl/scratch/data/3lang/raw/id_pile1/sealion_pile.jsonl" \
+#     --out_root "/home/users/nus/huangyl/scratch/data/3lang/out_llama2/id_pile1/" \
+#     --log_file_path "/home/users/nus/huangyl/scratch/code/llm-foundry/log/mdsconversion36.out" \
+#     --num_processes 10 \
+#     --concat_tokens 8192 \
+#     --tokenizer $tokenizer \
+#     --chunk_size 600000 \
+#     --eos_text "<|end_of_text|>" \
+#     --compression "zstd" \
+#     |& tee -a "$log_file"
+
+#later to do id_pile2 after llama3 finish
+
 python convert_dataset_json_mp.py \
-    --path "/home/users/nus/huangyl/scratch/data/3lang/raw/en_hq/combined.jsonl" \
-    --out_root "/home/users/nus/huangyl/scratch/data/3lang/out_llama3/en_hq/" \
-    --log_file_path "/home/users/nus/huangyl/scratch/code/llm-foundry/log/mdsconversion13.out" \
-    --num_processes 17 \
+    --path "/home/users/nus/huangyl/scratch/data/3lang/raw/id_pile2/combined.jsonl" \
+    --out_root "/home/users/nus/huangyl/scratch/data/3lang/out_llama2/id_pile2/" \
+    --log_file_path "/home/users/nus/huangyl/scratch/code/llm-foundry/log/mdsconversion37.out" \
+    --num_processes 15 \
     --concat_tokens 8192 \
-    --tokenizer "meta-llama/Meta-Llama-3-8B" \
-    --chunk_size 300000 \
-    --bos_text "<|begin_of_text|>" \
+    --tokenizer $tokenizer \
+    --chunk_size 600000 \
     --eos_text "<|end_of_text|>" \
     --compression "zstd" \
     |& tee -a "$log_file"
 
+# python convert_dataset_json_mp.py \
+#     --path "/home/users/nus/huangyl/scratch/data/3lang/raw/ms_pile/sealion_pile.jsonl" \
+#     --out_root "/home/users/nus/huangyl/scratch/data/3lang/out_llama2/ms_pile/" \
+#     --log_file_path "/home/users/nus/huangyl/scratch/code/llm-foundry/log/mdsconversion38.out" \
+#     --num_processes 10 \
+#     --concat_tokens 8192 \
+#     --tokenizer $tokenizer \
+#     --chunk_size 600000 \
+#     --eos_text "<|end_of_text|>" \
+#     --compression "zstd" \
+#     |& tee -a "$log_file"
 
+# python convert_dataset_json_mp.py \
+#     --path "/home/users/nus/huangyl/scratch/data/3lang/raw/ms_hq/combined.jsonl" \
+#     --out_root "/home/users/nus/huangyl/scratch/data/3lang/out_llama2/ms_hq/" \
+#     --log_file_path "/home/users/nus/huangyl/scratch/code/llm-foundry/log/mdsconversion39.out" \
+#     --num_processes 10 \
+#     --concat_tokens 8192 \
+#     --tokenizer $tokenizer \
+#     --chunk_size 600000 \
+#     --eos_text "<|end_of_text|>" \
+#     --compression "zstd" \
+#     |& tee -a "$log_file"
+
+# python convert_dataset_json_mp.py \
+#     --path "/home/users/nus/huangyl/scratch/data/3lang/raw/id_hq" \
+#     --out_root "/home/users/nus/huangyl/scratch/data/3lang/out_llama2/id_hq/" \
+#     --log_file_path "/home/users/nus/huangyl/scratch/code/llm-foundry/log/mdsconversion34.out" \
+#     --num_processes 10 \
+#     --concat_tokens 8192 \
+#     --tokenizer $tokenizer \
+#     --chunk_size 600000 \
+#     --eos_text "<|end_of_text|>" \
+#     --compression "zstd" \
+#     |& tee -a "/home/users/nus/huangyl/scratch/code/llm-foundry/log/mdsconversion34.out"
+
+
+##########################################
+# llama3
+
+# python convert_dataset_json_mp.py \
+#     --path "/home/users/nus/huangyl/scratch/data/3lang/raw/id_pile2/combined.jsonl" \
+#     --out_root "/home/users/nus/huangyl/scratch/data/3lang/out_llama3/id_pile2/" \
+#     --log_file_path "/home/users/nus/huangyl/scratch/code/llm-foundry/log/mdsconversion27.out" \
+#     --num_processes 15 \
+#     --concat_tokens 8192 \
+#     --tokenizer "/home/users/nus/huangyl/scratch/model/llama3-8b-tokenizer" \
+#     --chunk_size 600000 \
+#     --eos_text "<|end_of_text|>" \
+#     --compression "zstd" \
+#     |& tee -a "$log_file"
+
+# python convert_dataset_json_mp.py \
+#     --path "/home/users/nus/huangyl/scratch/data/3lang/raw/ms_hq/combined.jsonl" \
+#     --out_root "/home/users/nus/huangyl/scratch/data/3lang/out_llama3/ms_hq/" \
+#     --log_file_path "/home/users/nus/huangyl/scratch/code/llm-foundry/log/mdsconversion29.out" \
+#     --num_processes 10 \
+#     --concat_tokens 8192 \
+#     --tokenizer "/home/users/nus/huangyl/scratch/model/llama3-8b-tokenizer" \
+#     --chunk_size 600000 \
+#     --eos_text "<|end_of_text|>" \
+#     --compression "zstd" \
+#     |& tee -a "$log_file"
+
+# python convert_dataset_json_mp.py \
+#     --path "/home/users/nus/huangyl/scratch/data/3lang/raw/id_hq" \
+#     --out_root "/home/users/nus/huangyl/scratch/data/3lang/out_llama3/id_hq/" \
+#     --log_file_path "/home/users/nus/huangyl/scratch/code/llm-foundry/log/mdsconversion24.out" \
+#     --num_processes 10 \
+#     --concat_tokens 8192 \
+#     --tokenizer "/home/users/nus/huangyl/scratch/model/llama3-8b-tokenizer" \
+#     --chunk_size 600000 \
+#     --eos_text "<|end_of_text|>" \
+#     --compression "zstd" \
+#     |& tee -a "$log_file"

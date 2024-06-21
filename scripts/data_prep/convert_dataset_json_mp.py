@@ -530,15 +530,20 @@ def main(args: Namespace) -> None:
     for data_file in data_files:
         logger.info(data_file)
 
+    
     root = os.path.dirname(all_path)
     split_dir = os.path.join(root,'split')
     logger.info(f'root is {root}')
     logger.info(f'split_dir is {split_dir}')
 
-    # for data_file in data_files:
-    #     split_jsonl(data_file, split_dir, lines_per_file=args.chunk_size)
+    for data_file in data_files:
+        split_jsonl(data_file, split_dir, lines_per_file=args.chunk_size)
 
-    data_files_split = glob(f'{split_dir}/*')
+    data_files_split = glob(os.path.join(split_dir, '*.jsonl'))
+
+    logger.info(f'split data_files are:')
+    for data_file in data_files_split:
+        logger.info(data_file)
 
     # ################################
     # 3. converting jonsl to hf dataset (saved to HF cache dir)
