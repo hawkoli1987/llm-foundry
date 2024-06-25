@@ -1,0 +1,47 @@
+#!/bin/bash
+#PBS -l select=1:ncpus=64:mpiprocs=64:mem=100gb
+#PBS -l walltime=16:00:00
+#PBS -N sea128k_ms_hq
+#PBS -P 11003280
+#PBS -j oe
+#PBS -o /home/project/11003280/yuli/llm-foundry/log/mdsconversion69_ms_hq.out
+
+# load modules
+module load miniforge3/23.10
+
+# set envvars
+export HF_HOME="/home/project/11003280/vault/cache_yuli"
+source /home/users/nus/huangyl/scratch/code/nscc_working/arf/mosaicml_workspace/credential/hf_token
+source activate /home/project/11003280/envs/llmfoundry_yuli
+
+# Change directory to the directory containing the data preparation script
+cd /home/project/11003280/yuli/llm-foundry/scripts/data_prep
+sleep 30
+
+##########################################
+# minicpm
+tokenizer="/home/users/nus/huangyl/scratch/model/minicpm-tokenizer"
+
+# python convert_dataset_json_mp.py \
+#     --path "/home/project/11003280/data/3lang/raw/en_pile2" \
+#     --out_root "/home/project/11003280/data/3lang/out_minicpm/en_pile/" \
+#     --log_file_path "/home/project/11003280/yuli/llm-foundry/log/mdsconversion63_en_pile.out" \
+#     --num_processes 64 \
+#     --concat_tokens 4096 \
+#     --tokenizer $tokenizer \
+#     --eos_text "</s>" \
+#     --compression "zstd" \
+#     --chunk_size 300000 \
+#     |& tee -a "$log_file"
+
+# python convert_dataset_json_mp.py \
+#     --path "/home/project/11003280/data/3lang/raw/en_hq/combined.jsonl" \
+#     --out_root "/home/project/11003280/data/3lang/out_minicpm/en_hq/" \
+#     --log_file_path "/home/project/11003280/yuli/llm-foundry/log/mdsconversion65_en_hq.out" \
+#     --num_processes 10 \
+#     --concat_tokens 4096 \
+#     --tokenizer $tokenizer \
+#     --chunk_size 600000 \
+#     --eos_text "</s>" \
+#     --compression "zstd" \
+#     |& tee -a "$log_file"

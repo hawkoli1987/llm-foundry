@@ -100,6 +100,13 @@ aws s3 sync \
     s3://seafm-cluster-2-common/CPT_experiments/50B_en_id_ms/llama3/id_hq \
     --endpoint-url https://s3-accelerate.amazonaws.com
 
+aws s3 sync \
+    /home/users/nus/huangyl/scratch/data/3lang/out_llama3/en_pile \
+    s3://seafm-cluster-2-common/CPT_experiments/50B_en_id_ms/llama3/en_pile2 \
+    --endpoint-url https://s3-accelerate.amazonaws.com \
+    --dryrun
+
+
 ##################################
 
 aws s3 sync \
@@ -117,10 +124,27 @@ aws s3 sync \
     s3://seafm-cluster-2-common/CPT_experiments/50B_en_id_ms/llama2/ms_hq \
     --endpoint-url https://s3-accelerate.amazonaws.com
 
+aws s3 sync \
+    /home/users/nus/huangyl/scratch/data/3lang/out_llama2/id_hq \
+    s3://seafm-cluster-2-common/CPT_experiments/50B_en_id_ms/llama2/id_hq \
+    --endpoint-url https://s3-accelerate.amazonaws.com
+
+aws s3 sync \
+    /home/users/nus/huangyl/scratch/data/3lang/out_llama2/id_pile1 \
+    s3://seafm-cluster-2-common/CPT_experiments/50B_en_id_ms/llama2/id_pile1 \
+    --endpoint-url https://s3-accelerate.amazonaws.com
+
 ##################################
 
+aws s3 sync \
+    /home/users/nus/huangyl/scratch/data/3lang/out_llama2/en_hq \
+    s3://seafm-cluster-2-common/CPT_experiments/50B_en_id_ms/llama2/en_hq \
+    --endpoint-url https://s3-accelerate.amazonaws.com
 
-
+aws s3 sync \
+    /home/users/nus/huangyl/scratch/data/3lang/out_llama2/id_pile2 \
+    s3://seafm-cluster-2-common/CPT_experiments/50B_en_id_ms/llama2/id_pile2 \
+    --endpoint-url https://s3-accelerate.amazonaws.com
 
 
 cd /home/users/nus/huangyl/scratch/data/3lang/raw/id_hq/idwiki_dedup.jsonl
@@ -137,3 +161,7 @@ for file in *.jsonl; do
     break
   fi
 done
+
+cp -r \
+    /home/users/nus/huangyl/scratch/code/llm-foundry  \
+    /home/project/11003280/yuli/llm-foundry
