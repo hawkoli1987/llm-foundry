@@ -122,17 +122,18 @@ def setup_logging(log_file_path: str):
 # create temp jsonl to ensure only
 def preprocess_jsonl(path: str) -> str:
     temp_path = f"{path}.preprocessed"
-    with open(path, 'r') as infile, open(temp_path, 'w') as outfile:
-        for line in infile:
-            obj = json.loads(line)
-            for content_key in KEYS:
-                if content_key in obj:
-                    # Ensure only 'content' field is used
-                    new_obj = {content_key: obj[content_key]}
-                    outfile.write(json.dumps(new_obj) + '\n')
-                    break
-            else:
-                logger.warning(f"Skipping object without any of the keys: {obj}")
+    if not os.path.exists(temp_path):
+        with open(path, 'r') as infile, open(temp_path, 'w') as outfile:
+            for line in infile:
+                obj = json.loads(line)
+                for content_key in KEYS:
+                    if content_key in obj:
+                        # Ensure only 'content' field is used
+                        new_obj = {content_key: obj[content_key]}
+                        outfile.write(json.dumps(new_obj) + '\n')
+                        break
+                else:
+                    logger.warning(f"Skipping object without any of the keys: {obj}")
     return temp_path
 
 def build_hf_dataset(
@@ -261,23 +262,33 @@ def split_jsonl(input_path: str, split_dir: str, lines_per_file:int):
     with open(input_path, 'r') as source_file:
        
         while True:
-        # for _ in range(10):
+            ##################################
+            # variational line number for each jsonl based on text length in each line
             # Read a block of lines            
-            buffer_header = [source_file.readline() for _ in range(sample_size)]
+            # buffer_header = [source_file.readline() for _ in range(sample_size)]
+            # # Check if the end of the file has been reached
+            # if (not buffer_header) or (not buffer_header[0]):
+            #     logger.info(f'file reading completed, total {total_lines} text lines in the dataset')
+            #     break
+
+            # text_length_ratio = std_text_length/avg_text_length(buffer_header) # [2, 1, 0.1,..., 0.0001 ]
+            # # low-capped the reducation rate to 0.5 == up-capped the expansion rate to 2.0
+            # reduction_rate = max((1/text_length_ratio) ** 0.8, 0.5)
+            # true_lines_per_file = int(lines_per_file / reduction_rate)
+            # logger.info(f'split #{file_number} reduced by {reduction_rate:.1f}X >> lines/file {true_lines_per_file}')
+
+            # buffer = buffer_header + [source_file.readline() for _ in range(true_lines_per_file-sample_size)]
+           
+            ##################################
+            # constant line number
             # Check if the end of the file has been reached
-            if (not buffer_header) or (not buffer_header[0]):
+            buffer = [source_file.readline() for _ in range(lines_per_file)]
+            if (not buffer) or (not buffer[0]):
                 logger.info(f'file reading completed, total {total_lines} text lines in the dataset')
                 break
+            
+            ##################################
 
-            text_length_ratio = std_text_length/avg_text_length(buffer_header) # [2, 1, 0.1,..., 0.0001 ]
-            # reduction_rate = max(-3*math.log(text_length_ratio), 1.0) # [1.0, 1.0, 2.7, ..., 18.0]
-            # low-capped the reducation rate to 0.5 == up-capped the expansion rate to 2.0
-            reduction_rate = max((1/text_length_ratio) ** 0.8, 0.5)
-            true_lines_per_file = int(lines_per_file / reduction_rate)
-            logger.info(f'split #{file_number} reduced by {reduction_rate:.1f}X >> lines/file {true_lines_per_file}')
-
-            buffer = buffer_header + [source_file.readline() for _ in range(true_lines_per_file-sample_size)]
-           
             # Remove any empty strings that signify end of file in the last read block
             buffer = list(filter(None, buffer))
             logger.info(f'it contains line #{total_lines} to #{total_lines+len(buffer)}')
@@ -516,34 +527,34 @@ def main(args: Namespace) -> None:
     for attr, value in vars(args).items():
         logger.info(f"{attr}: {value}")
 
-    # e.g. (default) all_path = "/home/project/11003280/data_Ngan/50B_for_Yuli/yuli_data/combined.jsonl" 
-    all_path = args.path
+    # (mode 1) directly passing in the directory containing splitted jsonl 
+    # e.g args.path = "/home/project/11003280/data_Ngan/50B_for_Yuli/yuli_data" 
+    if os.path.isdir(args.path):
+        logger.info(f"processing from already splitted json inside {args.path}")
+        split_dir = args.path
 
-    if os.path.isdir(all_path): # (non-default)
-        # e.g. ["./en.jsonl", "./vi.jsonl", ...]
-        data_files = glob(f'{all_path}/*')
-    else: # (default)
-        # e.g. ["/home/project/11003280/data_Ngan/50B_for_Yuli/yuli_data/combined.jsonl"]
-        data_files = [all_path]
+    # (mode 2) e.g. "/home/project/11003280/data_Ngan/50B_for_Yuli/yuli_data/combined.jsonl"
+    else:
+        logger.info(f"processing from a combined jsonl: {args.path}")
+        root = os.path.dirname(args.path)
+        logger.info(f'root is {root}')
+        split_dir = os.path.join(root,'split')
+        logger.info(f'split_dir is {split_dir}')
 
-    logger.info(f'source data_files are:')
-    for data_file in data_files:
-        logger.info(data_file)
+        # split the jsonl if not already split
+        if not os.path.exists(split_dir):
+            # resplit the data
+            logger.info(f"splitting starts {args.path}")
+            split_jsonl(args.path, split_dir, lines_per_file=args.chunk_size)
+            logger.info(f"splitting completed {args.path}")
+        else:
+            logger.info(f'split_dir already exists, no splitting required')
 
-    
-    root = os.path.dirname(all_path)
-    split_dir = os.path.join(root,'split')
-    logger.info(f'root is {root}')
-    logger.info(f'split_dir is {split_dir}')
-
-    for data_file in data_files:
-        split_jsonl(data_file, split_dir, lines_per_file=args.chunk_size)
-
+    # gather all split data_files
     data_files_split = glob(os.path.join(split_dir, '*.jsonl'))
-
-    logger.info(f'split data_files are:')
-    for data_file in data_files_split:
-        logger.info(data_file)
+    logger.info(f'source splited jsonl files are:')
+    for split_file in data_files_split:
+        logger.info(split_file) 
 
     # ################################
     # 3. converting jonsl to hf dataset (saved to HF cache dir)
@@ -556,8 +567,11 @@ def main(args: Namespace) -> None:
     # d_f = /home/project/11003280/data_Ngan/50B_for_Yuli/yuli_data/split/11.jsonl
     arg_tuples = [(args, d_f) for d_f in data_files_split]
 
-    if not os.path.exists(args.out_root):
-        os.makedirs(args.out_root)
+    # clear the out_root if exists, or create one if it doesn't
+    if os.path.exists(args.out_root):
+        shutil.rmtree(args.out_root)
+        logger.info(f'output dir {args.out_root} exists and cleared')
+    os.makedirs(args.out_root)
 
     pool = multiprocessing.Pool(processes=args.num_processes)
     pool.map(single_process, arg_tuples)
