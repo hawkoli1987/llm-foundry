@@ -15,7 +15,7 @@ from sentencepiece import SentencePieceProcessor
 LANGS = ['en', 'zh', 'id', 'ms', 'tl', 'my', 'th', 'lo', 'km', 'ta', 'vi', 'python', 'javascript', 'shell', 'sql']
 SPECIAL_LANG_TOKENS_IDS = {'<|en|>': 31, '<|zh|>': 32, '<|id|>': 33, '<|ms|>': 34, '<|tl|>': 35, '<|my|>': 36, '<|th|>': 37, '<|lo|>': 38, '<|km|>': 39, '<|ta|>': 40, '<|vi|>': 41, '<|python|>': 42, '<|javascript|>': 43, '<|shell|>': 44, '<|sql|>': 45}
 
-
+KEYS = ['text','raw_contents','contents','raw_content','content']
 
 class ConcatTokensDataset(IterableDataset):
     """An IterableDataset that returns token samples for MDSWriter.
@@ -72,7 +72,12 @@ class ConcatTokensDataset(IterableDataset):
 
         buffer = []
         for sample in self.hf_dataset:
-            iids = self.tokenizer.encode(sample['text'])
+            for key in KEYS:
+                if key in sample:
+                    iids = self.tokenizer.encode(sample[key])
+                    break
+            else:
+                warnings.warn(f"Skipping object without any of the keys: {sample}")
             if self.use_lang_id:
                 # lang_id_tokens = self.tokenizer.encode(f"<|{sample['lang']}|>")
                 # lang_id_tokens = [self.tokenizer.piece_to_id(f"<|{sample['lang']}|>")]
