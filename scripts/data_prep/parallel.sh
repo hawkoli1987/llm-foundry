@@ -3,7 +3,7 @@ source /home/users/nus/huangyl/scratch/code/nscc_working/arf/mosaicml_workspace/
 module load miniforge3/23.10
 source activate /home/project/11003280/envs/llmfoundry_yuli
 echo "env is /home/project/11003280/envs/llmfoundry_yuli"
-cd /home/users/nus/huangyl/scratch/code/llm-foundry/scripts/data_prep
+cd /home/project/11003280/yuli/llm-foundry/scripts/data_prep
 export log_file="/home/users/nus/huangyl/scratch/code/llm-foundry/log/mdsconversion13.out"
 
 

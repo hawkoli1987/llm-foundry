@@ -30,7 +30,7 @@
     chmod +x ./data_prep/env_prep.sh
 
     # run the environment preparation script
-    ./data_prep/env_prep.sh
+    ./data_prep/env_prep.shcp 
     ```
 
 ### prepare the source files in jsonl

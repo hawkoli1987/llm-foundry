@@ -1,10 +1,10 @@
 #!/bin/bash
-#PBS -l select=1:ncpus=64:mpiprocs=64:mem=100gb
+#PBS -l select=1:ncpus=10:mpiprocs=10:mem=100gb
 #PBS -l walltime=16:00:00
-#PBS -N sea128k_ms_hq
+#PBS -N sea128k_en_pile
 #PBS -P 11003280
 #PBS -j oe
-#PBS -o /home/project/11003280/yuli/llm-foundry/log/mdsconversion69_ms_hq.out
+#PBS -o /home/project/11003280/yuli/llm-foundry/log/mdsconversion73_en_pile.out
 
 # load modules
 module load miniforge3/23.10
@@ -20,28 +20,29 @@ sleep 30
 
 ##########################################
 # minicpm
-tokenizer="/home/users/nus/huangyl/scratch/model/minicpm-tokenizer"
+tokenizer="/home/project/11003280/yuli/model/seatokenizer_128k/128000_wnorm_wodummyprefix.model"
+# tokenizer="aisingapore/sea-lion-3b"
 
-# python convert_dataset_json_mp.py \
-#     --path "/home/project/11003280/data/3lang/raw/en_pile2" \
-#     --out_root "/home/project/11003280/data/3lang/out_minicpm/en_pile/" \
-#     --log_file_path "/home/project/11003280/yuli/llm-foundry/log/mdsconversion63_en_pile.out" \
-#     --num_processes 64 \
-#     --concat_tokens 4096 \
-#     --tokenizer $tokenizer \
-#     --eos_text "</s>" \
-#     --compression "zstd" \
-#     --chunk_size 300000 \
-#     |& tee -a "$log_file"
+python convert_dataset_json_mp.py \
+    --path "/home/project/11003280/data/3lang/raw/en_pile2" \
+    --out_root "/home/project/11003280/data/3lang/out_sea128k/en_pile/" \
+    --log_file_path "/home/project/11003280/yuli/llm-foundry/log/mdsconversion73_en_pile.out" \
+    --num_processes 64 \
+    --concat_tokens 2048 \
+    --tokenizer $tokenizer \
+    --eos_text "<|endoftext|>" \
+    --compression "zstd" \
+    --chunk_size 300000 \
+    |& tee -a "$log_file"
 
 # python convert_dataset_json_mp.py \
 #     --path "/home/project/11003280/data/3lang/raw/en_hq/combined.jsonl" \
-#     --out_root "/home/project/11003280/data/3lang/out_minicpm/en_hq/" \
-#     --log_file_path "/home/project/11003280/yuli/llm-foundry/log/mdsconversion65_en_hq.out" \
+#     --out_root "/home/project/11003280/data/3lang/out_sea128k/en_hq/" \
+#     --log_file_path "/home/project/11003280/yuli/llm-foundry/log/mdsconversion75_en_hq.out" \
 #     --num_processes 10 \
-#     --concat_tokens 4096 \
+#     --concat_tokens 2048 \
 #     --tokenizer $tokenizer \
 #     --chunk_size 600000 \
-#     --eos_text "</s>" \
+#     --eos_text "<|endoftext|>" \
 #     --compression "zstd" \
 #     |& tee -a "$log_file"
