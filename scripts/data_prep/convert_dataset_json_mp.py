@@ -16,10 +16,11 @@ from torch.utils.data import DataLoader, IterableDataset
 from transformers import AutoTokenizer, PreTrainedTokenizerBase, GemmaTokenizer
 
 # when using BPE tokenizers
-from llmfoundry.data import ConcatTokensDataset
+# from llmfoundry.data import ConcatTokensDataset
 
 # when using sentencepiece tokenizers
-# from data_N import ConcatTokensDataset
+from data_N import ConcatTokensDataset
+
 import sentencepiece as spm
 from sentencepiece import SentencePieceProcessor
 
@@ -177,7 +178,7 @@ def build_hf_dataset(
         bos_text=bos_text,
         eos_text=eos_text,
         no_wrap=no_wrap,
-        # use_lang_id=use_lang_id # only when using SentencePiece (128k) tokenizer
+        use_lang_id=use_lang_id # only when using SentencePiece (128k) tokenizer
     )
 
     return dataset
@@ -334,58 +335,53 @@ def single_process(tuple_args: Tuple[Namespace, str]) -> None:
             logger.info(f"Previous conversion to {path_name} incomplete. Reconvert.")
             shutil.rmtree(outpath)
 
-    try:
-        mode = ConcatMode.CONCAT_TOKENS
+    mode = ConcatMode.CONCAT_TOKENS
 
-        # logger.info(f'@{path_name}, tokenizer: {args.tokenizer}, n_cpus: {args.num_processes}')
+    ## when using huggingface tokenizers
+    # tokenizer = AutoTokenizer.from_pretrained(args.tokenizer, trust_remote_code=True)
 
-        ## when using huggingface tokenizers
-        # tokenizer = AutoTokenizer.from_pretrained(args.tokenizer, trust_remote_code=True)
+    # when using sentencepiece tokenizers
+    tokenizer = spm.SentencePieceProcessor(model_file=args.tokenizer)
 
-        ## when using sentencepiece tokenizers
-        # tokenizer = spm.SentencePieceProcessor(model_file=args.tokenizer)
-
-        ## when using BPE dropout for Ngan
-        tokenizer = AutoTokenizer.from_pretrained(
-                args.tokenizer,
-                use_fast=False,
-                sp_model_kwargs={'enable_sampling': True, 'nbest_size': -1, 'alpha': 0.1}
-                )
-        
-        tokenizer.model_max_length = int(1e30)
-
-        columns = {'tokens': 'bytes'}
+    # ## when using BPE dropout for Ngan
+    # tokenizer = AutoTokenizer.from_pretrained(
+    #         args.tokenizer,
+    #         use_fast=False,
+    #         sp_model_kwargs={'enable_sampling': True, 'nbest_size': -1, 'alpha': 0.1}
+    #         )
     
-        # Get samples
-        dataset = build_hf_dataset(path=path,
-                                split=args.split,
-                                mode=mode,
-                                max_length=args.concat_tokens,
-                                bos_text=args.bos_text,
-                                eos_text=args.eos_text,
-                                no_wrap=args.no_wrap,
-                                tokenizer=tokenizer,
-                                use_lang_id=args.use_lang_id
-                                )
+    tokenizer.model_max_length = int(1e30)
 
-        end_time= time.time()
-        duration, start_time = end_time - start_time, end_time
-        logger.info(f'Loaded HF {path_name} dataset, took {duration:.1f} seconds')
+    columns = {'tokens': 'bytes'}
 
-        # Write samples
-        with MDSWriter(columns=columns,
-                    out=outpath,
-                    compression=args.compression,
-                    ) as out:
-            # for sample in tqdm(dataset):
-            for sample in dataset:
-                out.write(sample)
+    # Get samples
+    dataset = build_hf_dataset(path=path,
+                            split=args.split,
+                            mode=mode,
+                            max_length=args.concat_tokens,
+                            bos_text=args.bos_text,
+                            eos_text=args.eos_text,
+                            no_wrap=args.no_wrap,
+                            tokenizer=tokenizer,
+                            use_lang_id=args.use_lang_id
+                            )
 
-        duration = time.time() - start_time
-        logger.info(f'Converted {path_name} to mds/zstd, {duration:.1f} seconds')
-        
-    except Exception as e:
-        logger.error(f"Error processing {path_name}: {e}")    
+    end_time= time.time()
+    duration, start_time = end_time - start_time, end_time
+    logger.info(f'Loaded HF {path_name} dataset, took {duration:.1f} seconds')
+
+    # Write samples
+    with MDSWriter(columns=columns,
+                out=outpath,
+                compression=args.compression,
+                ) as out:
+        # for sample in tqdm(dataset):
+        for sample in dataset:
+            out.write(sample)
+
+    duration = time.time() - start_time
+    logger.info(f'Converted {path_name} to mds/zstd, {duration:.1f} seconds')
+    
 
 # helper function to obtain global shard_id for each mds/zstd dataset
 def with_id(basename: str, shard_id: int) -> str:
