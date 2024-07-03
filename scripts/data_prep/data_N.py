@@ -15,7 +15,7 @@ from sentencepiece import SentencePieceProcessor
 LANGS = ['en', 'zh', 'id', 'ms', 'tl', 'my', 'th', 'lo', 'km', 'ta', 'vi', 'python', 'javascript', 'shell', 'sql']
 SPECIAL_LANG_TOKENS_IDS = {'<|en|>': 31, '<|zh|>': 32, '<|id|>': 33, '<|ms|>': 34, '<|tl|>': 35, '<|my|>': 36, '<|th|>': 37, '<|lo|>': 38, '<|km|>': 39, '<|ta|>': 40, '<|vi|>': 41, '<|python|>': 42, '<|javascript|>': 43, '<|shell|>': 44, '<|sql|>': 45}
 
-KEYS = ['text','raw_contents','contents','raw_content','content']
+KEYS = ['text','raw_contents','contents','raw_content','content', 'paragraph', 'paragraphs']
 
 class ConcatTokensDataset(IterableDataset):
     """An IterableDataset that returns token samples for MDSWriter.

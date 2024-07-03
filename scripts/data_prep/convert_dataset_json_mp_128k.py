@@ -16,10 +16,10 @@ from torch.utils.data import DataLoader, IterableDataset
 from transformers import AutoTokenizer, PreTrainedTokenizerBase, GemmaTokenizer
 
 # when using BPE tokenizers
-from llmfoundry.data import ConcatTokensDataset
+# from llmfoundry.data import ConcatTokensDataset
 
-# # when using sentencepiece tokenizers
-# from data_N import ConcatTokensDataset
+# when using sentencepiece tokenizers
+from data_N import ConcatTokensDataset
 
 import sentencepiece as spm
 from sentencepiece import SentencePieceProcessor
@@ -33,7 +33,7 @@ import sys
 import logging
 # import math
 
-KEYS = ['text','raw_contents','contents','raw_content','content', 'paragraph', 'paragraphs']
+KEYS = ['text','raw_contents','contents','raw_content','content', 'paragraphs', 'paragraph']
 
 
 print("finish importing modules")
@@ -126,7 +126,7 @@ def preprocess_jsonl(path: str) -> str:
     if not os.path.exists(temp_path):
         with open(path, 'r') as infile, open(temp_path, 'w') as outfile:
             for line in infile:
-                obj = json.loads(line)
+                obj = json.loads(line, strict=False)
                 for content_key in KEYS:
                     if content_key in obj:
                         # Ensure only 'content' field is used
@@ -178,7 +178,7 @@ def build_hf_dataset(
         bos_text=bos_text,
         eos_text=eos_text,
         no_wrap=no_wrap,
-        # use_lang_id=use_lang_id # only when using SentencePiece (128k) tokenizer
+        use_lang_id=use_lang_id # only when using SentencePiece (128k) tokenizer
     )
 
     return dataset
@@ -226,7 +226,7 @@ def avg_text_length(buffer_header: list) -> float:
     for line in buffer_header:       
         try:
             # Load the JSON object
-            item = json.loads(line)
+            item = json.loads(line, strict=False)
             for content_key in KEYS:
                 if content_key in item:
                     content = item[content_key]
@@ -337,18 +337,18 @@ def single_process(tuple_args: Tuple[Namespace, str]) -> None:
 
     mode = ConcatMode.CONCAT_TOKENS
 
-    # # when using huggingface tokenizers
+    ## when using huggingface tokenizers
     # tokenizer = AutoTokenizer.from_pretrained(args.tokenizer, trust_remote_code=True)
 
-    # # when using sentencepiece tokenizers
-    # tokenizer = spm.SentencePieceProcessor(model_file=args.tokenizer)
+    # when using sentencepiece tokenizers
+    tokenizer = spm.SentencePieceProcessor(model_file=args.tokenizer)
 
-    ## when using BPE dropout for Ngan
-    tokenizer = AutoTokenizer.from_pretrained(
-            args.tokenizer,
-            use_fast=False,
-            sp_model_kwargs={'enable_sampling': True, 'nbest_size': -1, 'alpha': 0.1}
-            )
+    # ## when using BPE dropout for Ngan
+    # tokenizer = AutoTokenizer.from_pretrained(
+    #         args.tokenizer,
+    #         use_fast=False,
+    #         sp_model_kwargs={'enable_sampling': True, 'nbest_size': -1, 'alpha': 0.1}
+    #         )
     
     tokenizer.model_max_length = int(1e30)
 
@@ -417,7 +417,7 @@ def merge_shard_groups(out_dir: str) -> None:
     for subdir in subdirs:
         # subdir = /home/project/11003280/data_Ngan/50B_for_Yuli/out4/0./index.json
         index_filename = os.path.join(subdir, 'index.json')
-        obj = json.load(open(index_filename))
+        obj = json.load(open(index_filename), strict=False)
 
         # e.g. info =
         # {

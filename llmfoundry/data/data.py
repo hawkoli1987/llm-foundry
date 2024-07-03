@@ -109,7 +109,7 @@ class ConcatTokensDataset(IterableDataset):
         buffer = []
         for sample in self.hf_dataset:
             # Yuli custom scripts to generalize the key names to all dataset
-            KEYS = ['text','raw_contents','contents','raw_content','content']
+            KEYS = ['text','raw_contents','contents','raw_content','content', 'paragraph', 'paragraphs']
             for content_key in KEYS:
                 if content_key in sample:
                     content = sample[content_key]
