@@ -1,10 +1,10 @@
 #!/bin/bash
-#PBS -l select=1:ncpus=35:mpiprocs=35:mem=100gb
+#PBS -l select=1:ncpus=2:mpiprocs=2:mem=300gb
 #PBS -l walltime=16:00:00
-#PBS -N l3_th_pile2
+#PBS -N vi_hq
 #PBS -P 11003280
 #PBS -j oe
-#PBS -o /home/project/11003280/log/mds_conversion/l3_th_pile2.out
+#PBS -o /home/project/11003280/log/mds_conversion/vi_hq.out
 
 # load modules
 module load miniforge3/23.10
@@ -26,7 +26,7 @@ tokenizer="/home/users/nus/huangyl/scratch/model/llama3-8b-tokenizer"
 #     --path "/home/project/11003280/data/raw_hero/en_pile" \
 #     --out_root "/home/project/11003280/data/out_hero_llama3/en_pile/" \
 #     --num_processes 100 \
-#     --concat_tokens 4096 \
+#     --concat_tokens 8192 \
 #     --tokenizer $tokenizer \
 #     --eos_text "<|end_of_text|>" \
 #     --compression "zstd" \
@@ -36,7 +36,7 @@ tokenizer="/home/users/nus/huangyl/scratch/model/llama3-8b-tokenizer"
 #     --path "/home/project/11003280/data/raw_hero/en_hq/enwiki_dedup.jsonl" \
 #     --out_root "/home/project/11003280/data/out_hero_llama3/en_hq/" \
 #     --num_processes 20 \
-#     --concat_tokens 4096 \
+#     --concat_tokens 8192 \
 #     --tokenizer $tokenizer \
 #     --chunk_size 300000 \
 #     --eos_text "<|end_of_text|>" \
@@ -46,27 +46,27 @@ tokenizer="/home/users/nus/huangyl/scratch/model/llama3-8b-tokenizer"
 #     --path "/home/project/11003280/data/raw_hero/th_pile1/train.jsonl" \
 #     --out_root "/home/project/11003280/data/out_hero_llama3/th_pile1/" \
 #     --num_processes 55 \
-#     --concat_tokens 4096 \
+#     --concat_tokens 8192 \
 #     --tokenizer $tokenizer \
 #     --chunk_size 300000 \
 #     --eos_text "<|end_of_text|>" \
 #     --compression "zstd" \
 
-python convert_dataset_json_mp.py \
-    --path "/home/project/11003280/data/raw_hero/th_pile2/charin.jsonl" \
-    --out_root "/home/project/11003280/data/out_hero_llama3/th_pile2/" \
-    --num_processes 35 \
-    --concat_tokens 4096 \
-    --tokenizer $tokenizer \
-    --chunk_size 300000 \
-    --eos_text "<|end_of_text|>" \
-    --compression "zstd" \
+# python convert_dataset_json_mp.py \
+#     --path "/home/project/11003280/data/raw_hero/th_pile2/charin.jsonl" \
+#     --out_root "/home/project/11003280/data/out_hero_llama3/th_pile2/" \
+#     --num_processes 35 \
+#     --concat_tokens 8192 \
+#     --tokenizer $tokenizer \
+#     --chunk_size 300000 \
+#     --eos_text "<|end_of_text|>" \
+#     --compression "zstd" \
 
 # python convert_dataset_json_mp.py \
 #     --path "/home/project/11003280/data/raw_hero/th_hq/combined.jsonl" \
 #     --out_root "/home/project/11003280/data/out_hero_llama3/th_hq/" \
 #     --num_processes 2 \
-#     --concat_tokens 4096 \
+#     --concat_tokens 8192 \
 #     --tokenizer $tokenizer \
 #     --chunk_size 300000 \
 #     --eos_text "<|end_of_text|>" \
@@ -76,18 +76,18 @@ python convert_dataset_json_mp.py \
 #     --path "/home/project/11003280/data/raw_hero/vi_pile/merged.jsonl" \
 #     --out_root "/home/project/11003280/data/out_hero_llama3/vi_pile/" \
 #     --num_processes 100 \
-#     --concat_tokens 4096 \
+#     --concat_tokens 8192 \
 #     --tokenizer $tokenizer \
 #     --chunk_size 300000 \
 #     --eos_text "<|end_of_text|>" \
 #     --compression "zstd" \
 
-# python convert_dataset_json_mp.py \
-#     --path "/home/project/11003280/data/raw_hero/vi_hq/combined.jsonl" \
-#     --out_root "/home/project/11003280/data/out_hero_llama3/vi_hq/" \
-#     --num_processes 2 \
-#     --concat_tokens 4096 \
-#     --tokenizer $tokenizer \
-#     --chunk_size 300000 \
-#     --eos_text "<|end_of_text|>" \
-#     --compression "zstd" \
+python convert_dataset_json_mp.py \
+    --path "/home/project/11003280/data/raw_hero/vi_hq/combined.jsonl" \
+    --out_root "/home/project/11003280/data/out_hero_llama3/vi_hq/" \
+    --num_processes 2 \
+    --concat_tokens 8192 \
+    --tokenizer $tokenizer \
+    --chunk_size 300000 \
+    --eos_text "<|end_of_text|>" \
+    --compression "zstd" \

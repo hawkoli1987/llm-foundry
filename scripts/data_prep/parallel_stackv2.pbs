@@ -1,0 +1,30 @@
+#!/bin/bash
+#PBS -l select=1:ncpus=100:mpiprocs=100:mem=300gb
+#PBS -l walltime=24:00:00
+#PBS -N stackv2
+#PBS -P 11003280
+#PBS -j oe
+#PBS -o /home/project/11003280/log/data_download/stackv2.out
+
+# load modules
+module load miniforge3/23.10
+
+# set envvars
+export HF_HOME="/home/project/11003280/vault/cache_yuli"
+source /home/users/nus/huangyl/scratch/code/nscc_working/arf/mosaicml_workspace/credential/hf_token
+source activate /home/project/11003280/envs/llmfoundry_yuli
+
+# Change directory to the directory containing the data preparation script
+cd /home/project/11003280/yuli/llm-foundry/scripts/data_prep
+sleep 30
+
+parquet_dir=/home/project/11003280/data/stackv2/the-stack-v2-train-smol-ids/split
+n_cpu=100
+
+python download_hfdataset.py \
+    $parquet_dir \
+    $n_cpu \
+    $log_file_path /home/project/11003280/log/data_download/stackv2.out \
+    |& tee -a /home/project/11003280/log/data_download/stackv2.out
+
+
