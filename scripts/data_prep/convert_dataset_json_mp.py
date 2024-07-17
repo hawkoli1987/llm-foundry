@@ -119,22 +119,37 @@ def setup_logging(log_file_path: str):
 
     return logger
 
-
-# create temp jsonl to ensure only
 def preprocess_jsonl(path: str) -> str:
     temp_path = f"{path}.preprocessed"
     if not os.path.exists(temp_path):
         with open(path, 'r') as infile, open(temp_path, 'w') as outfile:
-            for line in infile:
-                obj = json.loads(line)
-                for content_key in KEYS:
-                    if content_key in obj:
-                        # Ensure only 'content' field is used
-                        new_obj = {content_key: obj[content_key]}
-                        outfile.write(json.dumps(new_obj) + '\n')
-                        break
-                else:
-                    logger.warning(f"Skipping object without any of the keys: {obj}")
+            # without line skipping
+            # for line in infile:
+            #     obj = json.loads(line)
+            #     for content_key in KEYS:
+            #         if content_key in obj:
+            #             # Ensure only 'content' field is used
+            #             new_obj = {content_key: obj[content_key]}
+            #             outfile.write(json.dumps(new_obj) + '\n')
+            #             break
+            #     else:
+            #         logger.warning(f"Skipping object without any of the keys: {obj}")
+
+            # with line skipping
+            for line_num, line in enumerate(infile, start=1):
+                try:
+                    obj = json.loads(line)
+                    for content_key in KEYS:
+                        if content_key in obj:
+                            # Ensure only 'content' field is used
+                            new_obj = {'text': obj[content_key]}
+                            outfile.write(json.dumps(new_obj) + '\n')
+                            break
+                    else:
+                        logger.warning(f"Skipping line with wrong keys {line_num}: {obj}")
+                except json.JSONDecodeError as e:
+                    logger.warning(f"Skipping line due to json loading error {line_num}: {e}")
+                    # logger.warning(f"Skipping invalid line: {line.strip()}")
     return temp_path
 
 def build_hf_dataset(
@@ -548,6 +563,7 @@ def main(args: Namespace) -> None:
 
     # gather all split data_files
     data_files_split = glob(os.path.join(split_dir, '*.jsonl'))
+
     logger.info(f'source splited jsonl files are:')
     for split_file in data_files_split:
         logger.info(split_file) 
@@ -586,7 +602,8 @@ def main(args: Namespace) -> None:
 
 
 if __name__ == '__main__':
-    main(parse_args())
-    # args = parse_args()
-    # logger.info(args)
-    # raise ValueError("This is a custom error message")
+    # main(parse_args())
+    out_dir='/home/users/nus/huangyl/shortcuts/scratch/data/out_gojek/dolma3'
+    subset='open-web-math-train'
+    merge_shard_groups_sub(out_dir=out_dir, subset=subset)
+
