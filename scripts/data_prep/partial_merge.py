@@ -123,7 +123,7 @@ def merge_shard_groups_sub(source_dir: str, out_dir: str, subset: str) -> None:
     duration = time.time() - start_time
     print(f'Merged all mds/zstd in {duration:.1f} seconds')
 
-def merge_shard_groups_main(source_dir: str, out_dir: str, subsets: List[str]) -> None:
+def merge_shard_groups_main(source_dir: str, out_dir: str, subsets: List[str], SAFE:bool=True) -> None:
     start_time = time.time()  # Start measuring time
 
     subdirs = []
@@ -181,7 +181,10 @@ def merge_shard_groups_main(source_dir: str, out_dir: str, subsets: List[str]) -
 
             # copy the mds/zstd files, report error if any
             try:
-                shutil.copy(old_filename, new_filename)
+                if SAFE:
+                    shutil.copy(old_filename, new_filename)
+                else:
+                    shutil.move(old_filename, new_filename)
             except OSError as e:
                 print(f"6. Error copying file {old_filename} to {new_filename}: {e}")
             # increment global shard_id
@@ -204,46 +207,35 @@ def merge_shard_groups_main(source_dir: str, out_dir: str, subsets: List[str]) -
     print(f'7. Merged all mds/zstd in {duration:.1f} seconds')
 
 if __name__ == '__main__':
-    # main(parse_args())
 
     # source_dir='/home/users/nus/huangyl/shortcuts/data/out_gojek/dolma'
-    # out_dir='/home/users/nus/huangyl/shortcuts/scratch/data/out_gojek/dolma4'
-    # # subset='open-web-math-train'
-    # # subset='algebraic-stack-train'
-    # # subset='arxiv'
-    # # subset='c4'
-    # # subset='cc_news'
-    # # subset='megawika'
-    # # subset='reddit'
-    # # subset='stackexchange'
-    # # subset='starcoder'
-    # # subset='tulu_flan'
-    # # subset='wiki'
-    # # subset='cc_en_head'
-    # # subset='cc_en_middle'
-    # # subset='cc_en_tail'
-    # # subset='falcon'
-    # merge_shard_groups_sub(source_dir=source_dir, out_dir=out_dir, subset=subset)
-
+    source_dir='/home/users/nus/huangyl/shortcuts/scratch/data/out_gojek/dolma2'
+    out_dir='/home/users/nus/huangyl/shortcuts/scratch/data/out_gojek/dolma4'
+    # subset='open-web-math-train'
+    # subset='algebraic-stack-train'
+    # subset='arxiv'
+    # subset='c4'
+    # subset='cc_news'
+    # subset='megawika'
+    # subset='reddit'
+    # subset='stackexchange'
+    # subset='starcoder'
+    # subset='tulu_flan'
+    # subset='wiki'
+    # subset='cc_en_head'
+    # subset='cc_en_middle'
+    # subset='cc_en_tail'
+    # subset='falcon'
+    # subset='books'
+    # subset='pes2o'
+    merge_shard_groups_sub(source_dir=source_dir, out_dir=out_dir, subset=subset)
     
-    source_dir='/home/users/nus/huangyl/shortcuts/scratch/data/out_gojek/dolma4'
-    out_dir='/home/users/nus/huangyl/shortcuts/scratch/data/out_gojek/dolma5'
-    subsets = [
-        'open-web-math-train',
-        'algebraic-stack-train',
-        'arxiv',
-        'c4',
-        'cc_news',
-        'megawika',
-        'reddit',
-        'stackexchange',
-        'starcoder',
-        'tulu_flan',
-        'wiki',
-        'cc_en_head',
-        'cc_en_middle',
-        'cc_en_tail',
-        'falcon'
-    ]
-    merge_shard_groups_main(source_dir=source_dir, out_dir=out_dir, subsets=subsets)
+    # source_dir='/scratch/users/nus/huangyl/data/out_gojek/dolma_flat'
+    # out_dir='/scratch/users/nus/huangyl/data/out_gojek/dolma_flat2'
+    # subsets = [
+    #     'dolma5',
+    #     'books',
+    #     'pes2o'
+    # ]
+    # merge_shard_groups_main(source_dir=source_dir, out_dir=out_dir, subsets=subsets, SAFE=False)
 
